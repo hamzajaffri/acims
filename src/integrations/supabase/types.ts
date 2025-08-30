@@ -596,7 +596,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_case_owner: {
+        Args: { _case_id: string }
+        Returns: boolean
+      }
+      is_evidence_owner: {
+        Args: { _evidence_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       case_priority: "low" | "medium" | "high" | "critical"

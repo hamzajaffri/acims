@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
-import { AuthService } from "@/lib/auth";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { useSupabase } from "@/hooks/useSupabase";
+import { AuthForm } from "@/components/auth/AuthForm";
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { Dashboard } from "@/pages/Dashboard";
 import Cases from "./pages/Cases";
@@ -23,20 +23,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading } = useSupabase();
 
-  useEffect(() => {
-    AuthService.initializeSystem();
-    setIsAuthenticated(AuthService.isAuthenticated());
-    setIsLoading(false);
-  }, []);
-
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -44,14 +33,14 @@ const App = () => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <LoginForm onSuccess={handleLoginSuccess} />
+            <AuthForm />
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>

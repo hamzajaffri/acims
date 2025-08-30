@@ -1,8 +1,42 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, UserCheck } from "lucide-react";
 import { UserForm } from "@/components/users/UserForm";
+import { SupabaseService } from "@/lib/supabase-service";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Users() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const data = await SupabaseService.getAllUsers();
+      setUsers(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load users",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="flex-1 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-background via-background to-card/50">
       {/* Animated Background Elements */}
@@ -66,20 +100,44 @@ export default function Users() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-16">
-                  <div className="relative inline-block mb-6">
-                    <User className="w-16 h-16 text-muted-foreground mx-auto" />
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse" />
+                {users.length > 0 ? (
+                  <div className="space-y-4">
+                    {users.map((user: any, index: number) => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center justify-between p-4 border border-border/30 rounded-lg bg-background/20 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 group animate-fade-in"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center group-hover:shadow-glow transition-all">
+                            <User className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold font-orbitron">{user.first_name} {user.last_name}</h3>
+                            <div className="text-sm text-muted-foreground font-mono">
+                              {user.email} • Role: {user.role} • Status: {user.is_active ? 'Active' : 'Inactive'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <h3 className="font-orbitron text-xl font-semibold mb-3 text-foreground">USER DATABASE EMPTY</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    Initialize your first system user to begin access management
-                  </p>
-                  <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    <span className="font-mono">System ready for user registration</span>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="relative inline-block mb-6">
+                      <User className="w-16 h-16 text-muted-foreground mx-auto" />
+                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse" />
+                    </div>
+                    <h3 className="font-orbitron text-xl font-semibold mb-3 text-foreground">USER DATABASE EMPTY</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      Initialize your first system user to begin access management
+                    </p>
+                    <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <span className="font-mono">System ready for user registration</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
