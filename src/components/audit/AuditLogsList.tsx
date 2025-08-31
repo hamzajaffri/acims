@@ -15,13 +15,13 @@ import {
 
 interface AuditLog {
   id: string;
-  userId: string;
+  user_id: string;
   action: string;
   entity: string;
-  entityId: string;
-  details: Record<string, any>;
+  entity_id: string;
+  details: any;
   timestamp: string;
-  ipAddress?: string;
+  ip_address?: string;
 }
 
 export function AuditLogsList() {
@@ -34,15 +34,13 @@ export function AuditLogsList() {
     return () => clearInterval(interval);
   }, []);
 
-  const loadAuditLogs = () => {
-    const storedLogs = localStorage.getItem('auditLogs');
-    if (storedLogs) {
-      const parsedLogs = JSON.parse(storedLogs);
-      // Sort by timestamp, most recent first
-      const sortedLogs = parsedLogs.sort((a: AuditLog, b: AuditLog) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      setLogs(sortedLogs);
+  const loadAuditLogs = async () => {
+    try {
+      const { SupabaseService } = await import('@/lib/supabase-service');
+      const data = await SupabaseService.getAllAuditLogs();
+      setLogs(data);
+    } catch (error) {
+      console.error('Failed to load audit logs:', error);
     }
   };
 
@@ -148,7 +146,7 @@ export function AuditLogsList() {
                           {log.action.replace(/_/g, ' ')}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          by {log.userId}
+                          by {log.user_id}
                         </span>
                       </div>
                       
@@ -161,10 +159,10 @@ export function AuditLogsList() {
                           <Clock className="w-3 h-3" />
                           <span>{formatTimestamp(log.timestamp)}</span>
                         </div>
-                        {log.ipAddress && (
+                        {log.ip_address && (
                           <div className="flex items-center gap-1">
                             <Monitor className="w-3 h-3" />
-                            <span>{log.ipAddress}</span>
+                            <span>{log.ip_address}</span>
                           </div>
                         )}
                       </div>

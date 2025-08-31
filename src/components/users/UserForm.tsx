@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { AuthService } from "@/lib/auth";
+import { SupabaseService } from "@/lib/supabase-service";
 import { Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function UserForm() {
   const [open, setOpen] = useState(false);
@@ -19,11 +20,11 @@ export function UserForm() {
     lastName: "",
     email: "",
     phone: "",
-    role: "officer" as "admin" | "detective" | "officer" | "analyst",
+    role: "viewer" as "admin" | "investigator" | "viewer" | "analyst",
     department: "",
     badgeNumber: "",
     isActive: true,
-    canAccessSensitive: false
+    password: ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,25 +32,47 @@ export function UserForm() {
     setLoading(true);
 
     try {
-      // Generate username from email
-      const username = formData.email.split('@')[0];
-      
-      // Create user through AuthService
-      const newUser = AuthService.createUser({
-        username,
+      // First create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        role: formData.role === "detective" ? "investigator" : formData.role === "officer" ? "viewer" : formData.role as "admin" | "analyst",
-        isActive: formData.isActive,
+        password: formData.password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: formData.firstName,
+          last_name: formData.lastName
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Create user record in public.users table
+      await SupabaseService.createUser({
+        user_id: authData.user.id,
+        email: formData.email,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        role: formData.role,
         phone: formData.phone,
         department: formData.department,
-        badgeNumber: formData.badgeNumber
+        badge_number: formData.badgeNumber,
+        is_active: formData.isActive
+      });
+
+      // Log audit trail
+      await SupabaseService.createAuditLog({
+        action: 'CREATE',
+        entity: 'user',
+        entity_id: authData.user.id,
+        details: { 
+          email: formData.email, 
+          role: formData.role,
+          created_by_admin: true
+        }
       });
 
       toast({
         title: "User Created",
-        description: `User ${formData.firstName} ${formData.lastName} has been created successfully. Login credentials sent to ${formData.email}.`,
+        description: `User ${formData.firstName} ${formData.lastName} has been created successfully.`,
       });
 
       // Reset form
@@ -58,11 +81,11 @@ export function UserForm() {
         lastName: "",
         email: "",
         phone: "",
-        role: "officer",
+        role: "viewer",
         department: "",
         badgeNumber: "",
         isActive: true,
-        canAccessSensitive: false
+        password: ""
       });
 
       setOpen(false);
@@ -129,6 +152,20 @@ export function UserForm() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Secure password"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
@@ -137,23 +174,23 @@ export function UserForm() {
                 placeholder="(555) 123-4567"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: "admin" | "detective" | "officer" | "analyst") => setFormData({ ...formData, role: value })}>
+              <Select value={formData.role} onValueChange={(value: "admin" | "investigator" | "viewer" | "analyst") => setFormData({ ...formData, role: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="detective">Detective</SelectItem>
-                  <SelectItem value="officer">Officer</SelectItem>
+                  <SelectItem value="investigator">Investigator</SelectItem>
                   <SelectItem value="analyst">Analyst</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
               <Input
@@ -184,17 +221,6 @@ export function UserForm() {
                 id="isActive" 
                 checked={formData.isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="canAccessSensitive">Sensitive Data Access</Label>
-                <p className="text-sm text-muted-foreground">Access to classified information</p>
-              </div>
-              <Switch 
-                id="canAccessSensitive" 
-                checked={formData.canAccessSensitive}
-                onCheckedChange={(checked) => setFormData({ ...formData, canAccessSensitive: checked })}
               />
             </div>
           </div>

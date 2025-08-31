@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { useSupabase } from '@/hooks/useSupabase';
 import { Shield, Users, Lock, Mail } from 'lucide-react';
 
@@ -11,7 +11,7 @@ export function AuthForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useSupabase();
+  const { signIn } = useSupabase();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,17 +25,6 @@ export function AuthForm() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await signUp(email, password);
-    } catch (error) {
-      console.error('Sign up error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-card/50 relative overflow-hidden">
@@ -99,112 +88,50 @@ export function AuthForm() {
           </CardHeader>
 
           <CardContent>
-            <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2 bg-background/50">
-                <TabsTrigger value="signin" className="gap-2">
-                  <Lock className="w-4 h-4" />
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="signup" className="gap-2">
-                  <Users className="w-4 h-4" />
-                  Sign Up
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-primary" />
-                      Email
-                    </Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="officer@department.gov"
-                      className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-primary" />
-                      Password
-                    </Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter secure password"
-                      className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full gap-2 hover:shadow-glow transition-all"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Shield className="w-4 h-4" />
-                    )}
-                    {loading ? 'Authenticating...' : 'Access System'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-primary" />
-                      Email
-                    </Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="officer@department.gov"
-                      className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-primary" />
-                      Password
-                    </Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create secure password"
-                      className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
-                      required
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full gap-2 hover:shadow-glow transition-all"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Users className="w-4 h-4" />
-                    )}
-                    {loading ? 'Creating Account...' : 'Register Access'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-primary" />
+                  Email
+                </Label>
+                <Input
+                  id="signin-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="officer@department.gov"
+                  className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signin-password" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-primary" />
+                  Password
+                </Label>
+                <Input
+                  id="signin-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter secure password"
+                  className="bg-background/50 border-border/50 hover:border-primary/30 focus:border-primary/60 transition-all"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full gap-2 hover:shadow-glow transition-all"
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Shield className="w-4 h-4" />
+                )}
+                {loading ? 'Authenticating...' : 'Access System'}
+              </Button>
+            </form>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-2">

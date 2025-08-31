@@ -196,6 +196,17 @@ export class SupabaseService {
     return data || [];
   }
 
+  static async createUser(userData: any) {
+    const { data, error } = await supabase
+      .from('users')
+      .insert(userData)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   static async updateUser(id: string, updates: any) {
     const { data, error } = await supabase
       .from('users')
