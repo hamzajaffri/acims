@@ -21,7 +21,7 @@ interface AuditLog {
   entity_id: string;
   details: any;
   timestamp: string;
-  ip_address?: string;
+  ip_address?: any;
 }
 
 export function AuditLogsList() {
@@ -38,7 +38,7 @@ export function AuditLogsList() {
     try {
       const { SupabaseService } = await import('@/lib/supabase-service');
       const data = await SupabaseService.getAllAuditLogs();
-      setLogs(data);
+      setLogs(data as AuditLog[]);
     } catch (error) {
       console.error('Failed to load audit logs:', error);
     }
