@@ -12,8 +12,11 @@ export function Header() {
   const { user, signOut } = useSupabase();
 
   const handleSignOut = async () => {
+    console.log('Logout button clicked');
     try {
+      console.log('Calling signOut...');
       await signOut();
+      console.log('SignOut completed successfully');
     } catch (error) {
       console.error('Logout error:', error);
     }

@@ -69,13 +69,24 @@ export function useSupabase() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: 'Sign Out Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+    console.log('signOut function called');
+    try {
+      const { error } = await supabase.auth.signOut();
+      console.log('Supabase signOut result:', { error });
+      if (error) {
+        console.error('Supabase signOut error:', error);
+        toast({
+          title: 'Sign Out Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+        throw error;
+      }
+      console.log('SignOut successful, clearing state...');
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('SignOut catch block:', error);
       throw error;
     }
   };
