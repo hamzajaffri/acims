@@ -32,22 +32,21 @@ export function UserForm() {
     setLoading(true);
 
     try {
-      // First create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        email_confirm: true,
-        user_metadata: {
+      // First create auth user via Edge Function (service role)
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: formData.email,
+          password: formData.password,
           first_name: formData.firstName,
           last_name: formData.lastName
-        }
+        },
       });
-
-      if (authError) throw authError;
+      if (fnError) throw fnError;
+      const newUserId = (fnData as { user_id: string }).user_id;
 
       // Create user record in public.users table
       await SupabaseService.createUser({
-        user_id: authData.user.id,
+        user_id: newUserId,
         email: formData.email,
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -62,7 +61,7 @@ export function UserForm() {
       await SupabaseService.createAuditLog({
         action: 'CREATE',
         entity: 'user',
-        entity_id: authData.user.id,
+        entity_id: newUserId,
         details: { 
           email: formData.email, 
           role: formData.role,
