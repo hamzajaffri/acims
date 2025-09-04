@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { Header } from "@/components/layout/Header";
 import { useSupabase } from "@/hooks/useSupabase";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AppSidebar } from "@/components/layout/Sidebar";
@@ -57,19 +58,24 @@ const App = () => {
             <SidebarProvider>
               <div className="flex min-h-screen w-full">
                 <AppSidebar />
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/cases" element={<Cases />} />
-                  <Route path="/victims" element={<Victims />} />
-                  <Route path="/suspects" element={<Suspects />} />
-                  <Route path="/evidence" element={<Evidence />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/audit" element={<AuditLogs />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <div className="flex-1 flex flex-col">
+                  <Header />
+                  <main className="flex-1">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/cases" element={<Cases />} />
+                      <Route path="/victims" element={<Victims />} />
+                      <Route path="/suspects" element={<Suspects />} />
+                      <Route path="/evidence" element={<Evidence />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/users" element={<Users />} />
+                      <Route path="/audit" element={<AuditLogs />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                </div>
               </div>
             </SidebarProvider>
           </BrowserRouter>

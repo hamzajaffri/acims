@@ -25,8 +25,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { AuthService } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
+import { useSupabase } from '@/hooks/useSupabase';
 
 const adminMenuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -44,14 +44,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  const currentUser = AuthService.getCurrentUser();
+  const { user, signOut } = useSupabase();
   const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => currentPath === path;
 
-  const handleLogout = () => {
-    AuthService.logout();
-    window.location.href = '/';
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -76,21 +79,21 @@ export function AppSidebar() {
         </div>
 
         {/* User Info */}
-        {currentUser && (
+        {user && (
           <div className="px-6 pb-4">
             <div className={`flex items-center space-x-3 p-3 rounded-lg bg-sidebar-accent/50 ${collapsed ? 'justify-center' : ''}`}>
               <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
                 <span className="text-primary-foreground text-sm font-semibold">
-                  {currentUser.firstName[0]}{currentUser.lastName[0]}
+                  {user.email?.[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {currentUser.firstName} {currentUser.lastName}
+                    {user.email}
                   </p>
-                  <p className="text-xs text-sidebar-foreground/60 capitalize">
-                    {currentUser.role}
+                  <p className="text-xs text-sidebar-foreground/60">
+                    User
                   </p>
                 </div>
               )}
