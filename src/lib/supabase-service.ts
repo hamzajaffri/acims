@@ -219,6 +219,18 @@ export class SupabaseService {
     return data;
   }
 
+  static async deleteUser(id: string) {
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .eq('user_id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   // Audit Logs
   static async getAllAuditLogs() {
     const { data, error } = await supabase

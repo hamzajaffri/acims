@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, UserCheck } from "lucide-react";
 import { UserForm } from "@/components/users/UserForm";
+import { UserEditDialog } from "@/components/users/UserEditDialog";
+import { UserDeleteDialog } from "@/components/users/UserDeleteDialog";
 import { SupabaseService } from "@/lib/supabase-service";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabase } from "@/hooks/useSupabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -111,24 +114,28 @@ export default function Users() {
               <CardContent>
                 {users.length > 0 ? (
                   <div className="space-y-4">
-                    {users.map((user: any, index: number) => (
-                      <div 
-                        key={user.id} 
-                        className="flex items-center justify-between p-4 border border-border/30 rounded-lg bg-background/20 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 group animate-fade-in"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center group-hover:shadow-glow transition-all">
-                            <User className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold font-orbitron">{user.first_name} {user.last_name}</h3>
-                            <div className="text-sm text-muted-foreground font-mono">
-                              {user.email} • Role: {user.role} • Status: {user.is_active ? 'Active' : 'Inactive'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                     {users.map((user: any, index: number) => (
+                       <div 
+                         key={user.id} 
+                         className="flex items-center justify-between p-4 border border-border/30 rounded-lg bg-background/20 hover:bg-primary/5 hover:border-primary/30 transition-all duration-300 group animate-fade-in"
+                         style={{ animationDelay: `${index * 0.1}s` }}
+                       >
+                         <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center group-hover:shadow-glow transition-all">
+                             <User className="w-5 h-5 text-primary" />
+                           </div>
+                           <div>
+                             <h3 className="font-semibold font-orbitron">{user.first_name} {user.last_name}</h3>
+                             <div className="text-sm text-muted-foreground font-mono">
+                               {user.email} • Role: {user.role} • Status: {user.is_active ? 'Active' : 'Inactive'}
+                             </div>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <UserEditDialog user={user} onUserUpdated={loadUsers} />
+                           <UserDeleteDialog user={user} onUserDeleted={loadUsers} />
+                         </div>
+                       </div>
                     ))}
                   </div>
                 ) : (
