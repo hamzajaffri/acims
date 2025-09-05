@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
-import { Header } from "@/components/layout/Header";
+
 import { useSupabase } from "@/hooks/useSupabase";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AppSidebar } from "@/components/layout/Sidebar";
@@ -59,7 +59,6 @@ const App = () => {
               <div className="flex min-h-screen w-full">
                 <AppSidebar />
                 <div className="flex-1 flex flex-col">
-                  <Header />
                   <main className="flex-1">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
