@@ -4,24 +4,33 @@ import { User, UserCheck } from "lucide-react";
 import { UserForm } from "@/components/users/UserForm";
 import { SupabaseService } from "@/lib/supabase-service";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabase } from "@/hooks/useSupabase";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useSupabase();
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (user) {
+      loadUsers();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const loadUsers = async () => {
     try {
+      console.log('Loading users...', { user: user?.id });
       const data = await SupabaseService.getAllUsers();
+      console.log('Users loaded:', data);
       setUsers(data);
     } catch (error) {
+      console.error('Error loading users:', error);
       toast({
         title: "Error",
-        description: "Failed to load users",
+        description: `Failed to load users: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
