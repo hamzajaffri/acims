@@ -47,9 +47,10 @@ export function UserForm() {
       let targetUserId: string | null = null;
       let wasExisting = false;
 
-      if (fnError) {
-        const msg = (fnError as any)?.message ? String((fnError as any).message) : String(fnError);
-        if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('email_exists')) {
+      const responseError = (fnError as any)?.message || ((fnData as any)?.error as string | undefined);
+      if (responseError) {
+        const msg = responseError.toLowerCase();
+        if (msg.includes('already been registered') || msg.includes('email_exists')) {
           // Email exists in auth -> update existing user's details & optionally password
           const existing = await SupabaseService.getUserByEmail(email);
           if (!existing) {
@@ -60,13 +61,15 @@ export function UserForm() {
 
           // Update password if provided
           if (formData.password) {
-            const { error: pwErr } = await supabase.functions.invoke('admin-create-user', {
+            const { error: pwErr, data: pwData } = await supabase.functions.invoke('admin-create-user', {
               body: { action: 'update_password', user_id: targetUserId, password: formData.password },
             });
-            if (pwErr) throw new Error(pwErr.message || 'Failed to update password');
+            if (pwErr || (pwData as any)?.error) {
+              throw new Error(pwErr?.message || (pwData as any)?.error || 'Failed to update password');
+            }
           }
         } else {
-          throw fnError;
+          throw new Error(responseError);
         }
       } else {
         targetUserId = (fnData as { user_id: string }).user_id;
@@ -74,17 +77,31 @@ export function UserForm() {
 
       if (!targetUserId) throw new Error('Missing user id');
 
-      // Update users row (trigger created a default row on fresh create)
-      await SupabaseService.updateUser(targetUserId, {
-        email,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        role: formData.role,
-        phone: formData.phone,
-        department: formData.department,
-        badge_number: formData.badgeNumber,
-        is_active: formData.isActive,
-      });
+      // Create or update users row
+      if (wasExisting) {
+        await SupabaseService.updateUser(targetUserId, {
+          email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role,
+          phone: formData.phone,
+          department: formData.department,
+          badge_number: formData.badgeNumber,
+          is_active: formData.isActive,
+        });
+      } else {
+        await SupabaseService.createUser({
+          user_id: targetUserId,
+          email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role,
+          phone: formData.phone,
+          department: formData.department,
+          badge_number: formData.badgeNumber,
+          is_active: formData.isActive,
+        });
+      }
 
       // Log audit trail
       await SupabaseService.createAuditLog({
