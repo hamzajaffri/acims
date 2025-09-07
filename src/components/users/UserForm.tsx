@@ -32,67 +32,99 @@ export function UserForm() {
     setLoading(true);
 
     try {
-      // First create auth user via Edge Function (service role)
+      const email = formData.email.trim().toLowerCase();
+
+      // Attempt to create auth user via Edge Function (service role)
       const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
         body: {
-          email: formData.email,
+          email,
           password: formData.password,
           first_name: formData.firstName,
-          last_name: formData.lastName
+          last_name: formData.lastName,
         },
       });
-      if (fnError) throw fnError;
-      const newUserId = (fnData as { user_id: string }).user_id;
 
-      // Create user record in public.users table
-      await SupabaseService.createUser({
-        user_id: newUserId,
-        email: formData.email,
+      let targetUserId: string | null = null;
+      let wasExisting = false;
+
+      if (fnError) {
+        const msg = (fnError as any)?.message ? String((fnError as any).message) : String(fnError);
+        if (msg.toLowerCase().includes('already been registered') || msg.toLowerCase().includes('email_exists')) {
+          // Email exists in auth -> update existing user's details & optionally password
+          const existing = await SupabaseService.getUserByEmail(email);
+          if (!existing) {
+            throw new Error('User exists in auth but not found in users table.');
+          }
+          targetUserId = existing.user_id;
+          wasExisting = true;
+
+          // Update password if provided
+          if (formData.password) {
+            const { error: pwErr } = await supabase.functions.invoke('admin-create-user', {
+              body: { action: 'update_password', user_id: targetUserId, password: formData.password },
+            });
+            if (pwErr) throw new Error(pwErr.message || 'Failed to update password');
+          }
+        } else {
+          throw fnError;
+        }
+      } else {
+        targetUserId = (fnData as { user_id: string }).user_id;
+      }
+
+      if (!targetUserId) throw new Error('Missing user id');
+
+      // Update users row (trigger created a default row on fresh create)
+      await SupabaseService.updateUser(targetUserId, {
+        email,
         first_name: formData.firstName,
         last_name: formData.lastName,
         role: formData.role,
         phone: formData.phone,
         department: formData.department,
         badge_number: formData.badgeNumber,
-        is_active: formData.isActive
+        is_active: formData.isActive,
       });
 
       // Log audit trail
       await SupabaseService.createAuditLog({
-        action: 'CREATE',
+        action: wasExisting ? 'UPDATE' : 'CREATE',
         entity: 'user',
-        entity_id: newUserId,
-        details: { 
-          email: formData.email, 
+        entity_id: targetUserId,
+        details: {
+          email,
           role: formData.role,
-          created_by_admin: true
-        }
+          created_by_admin: true,
+          mode: wasExisting ? 'existing_user_updated' : 'new_user_created',
+        },
       });
 
       toast({
-        title: "User Created",
-        description: `User ${formData.firstName} ${formData.lastName} has been created successfully.`,
+        title: wasExisting ? 'User Updated' : 'User Created',
+        description: wasExisting
+          ? 'Existing user updated successfully.'
+          : `User ${formData.firstName} ${formData.lastName} has been created successfully.`,
       });
 
       // Reset form
       setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        role: "viewer",
-        department: "",
-        badgeNumber: "",
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        role: 'viewer',
+        department: '',
+        badgeNumber: '',
         isActive: true,
-        password: ""
+        password: ''
       });
 
       setOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create user",
-        variant: "destructive"
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create user',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);

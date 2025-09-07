@@ -196,6 +196,16 @@ export class SupabaseService {
     return data || [];
   }
 
+  static async getUserByEmail(email: string) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
   static async createUser(userData: any) {
     const { data, error } = await supabase
       .from('users')
