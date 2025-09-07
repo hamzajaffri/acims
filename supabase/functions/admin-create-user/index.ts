@@ -67,6 +67,38 @@ serve(async (req) => {
     }
 
     const payload = await req.json();
+    const action = String(payload.action || "create_user");
+
+    // Support updating an existing user's password
+    if (action === "update_password") {
+      const user_id = String(payload.user_id || "");
+      const new_password = String(payload.password || "");
+
+      if (!user_id || !new_password) {
+        return new Response(
+          JSON.stringify({ error: "user_id and password are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: updated, error: updateError } = await supabase.auth.admin.updateUserById(user_id, {
+        password: new_password,
+      });
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ user_id: updated.user?.id, status: "password_updated" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Default behavior: create a new auth user
     const email = String(payload.email || "").toLowerCase().trim();
     const password = String(payload.password || "");
     const first_name = payload.first_name ?? null;

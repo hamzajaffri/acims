@@ -37,11 +37,8 @@ export function UserEditDialog({ user, onUserUpdated }: UserEditDialogProps) {
     setLoading(true);
 
     try {
-      // Prepare update data (exclude new_password if empty)
-      const updateData = { ...formData };
-      if (!updateData.new_password) {
-        delete updateData.new_password;
-      }
+      // Prepare update data (never send new_password to DB)
+      const { new_password, ...updateData } = formData;
 
       console.log('Updating user:', user.user_id, updateData);
       
@@ -49,12 +46,12 @@ export function UserEditDialog({ user, onUserUpdated }: UserEditDialogProps) {
       await SupabaseService.updateUser(user.user_id, updateData);
 
       // If password is being updated, call edge function to update auth
-      if (formData.new_password) {
+      if (new_password) {
         const { data, error } = await supabase.functions.invoke('admin-create-user', {
           body: {
             action: 'update_password',
             user_id: user.user_id,
-            password: formData.new_password
+            password: new_password
           }
         });
 
