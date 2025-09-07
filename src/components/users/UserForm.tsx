@@ -34,51 +34,27 @@ export function UserForm() {
     try {
       const email = formData.email.trim().toLowerCase();
 
-      // Attempt to create auth user via Edge Function (service role)
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
-        body: {
-          email,
-          password: formData.password,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-        },
-      });
-
-      let targetUserId: string | null = null;
+      // Check if user already exists in our users table
+      const existingUser = await SupabaseService.getUserByEmail(email);
+      let targetUserId: string;
       let wasExisting = false;
 
-      const responseError = (fnError as any)?.message || ((fnData as any)?.error as string | undefined);
-      if (responseError) {
-        const msg = responseError.toLowerCase();
-        if (msg.includes('already been registered') || msg.includes('email_exists')) {
-          // Email exists in auth -> update existing user's details & optionally password
-          const existing = await SupabaseService.getUserByEmail(email);
-          if (!existing) {
-            throw new Error('User exists in auth but not found in users table.');
-          }
-          targetUserId = existing.user_id;
-          wasExisting = true;
+      if (existingUser) {
+        // User exists, update their info
+        targetUserId = existingUser.user_id;
+        wasExisting = true;
 
-          // Update password if provided
-          if (formData.password) {
-            const { error: pwErr, data: pwData } = await supabase.functions.invoke('admin-create-user', {
-              body: { action: 'update_password', user_id: targetUserId, password: formData.password },
-            });
-            if (pwErr || (pwData as any)?.error) {
-              throw new Error(pwErr?.message || (pwData as any)?.error || 'Failed to update password');
-            }
+        // Update password if provided
+        if (formData.password) {
+          const { error: pwErr, data: pwData } = await supabase.functions.invoke('admin-create-user', {
+            body: { action: 'update_password', user_id: targetUserId, password: formData.password },
+          });
+          if (pwErr || (pwData as any)?.error) {
+            throw new Error(pwErr?.message || (pwData as any)?.error || 'Failed to update password');
           }
-        } else {
-          throw new Error(responseError);
         }
-      } else {
-        targetUserId = (fnData as { user_id: string }).user_id;
-      }
 
-      if (!targetUserId) throw new Error('Missing user id');
-
-      // Create or update users row
-      if (wasExisting) {
+        // Update user info
         await SupabaseService.updateUser(targetUserId, {
           email,
           first_name: formData.firstName,
@@ -90,6 +66,24 @@ export function UserForm() {
           is_active: formData.isActive,
         });
       } else {
+        // Create new user
+        const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+          body: {
+            email,
+            password: formData.password,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          },
+        });
+
+        if (fnError || (fnData as any)?.error) {
+          const errorMsg = fnError?.message || (fnData as any)?.error;
+          throw new Error(errorMsg || 'Failed to create user');
+        }
+
+        targetUserId = (fnData as { user_id: string }).user_id;
+
+        // Create user record
         await SupabaseService.createUser({
           user_id: targetUserId,
           email,
@@ -137,10 +131,12 @@ export function UserForm() {
       });
 
       setOpen(false);
+      window.location.reload(); // Refresh to show updated user list
     } catch (error) {
+      console.error('User creation/update error:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create user',
+        description: error instanceof Error ? error.message : 'Failed to create/update user',
         variant: 'destructive',
       });
     } finally {
