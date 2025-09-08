@@ -99,9 +99,15 @@ export function ComprehensiveCaseForm({ onCaseCreated }: ComprehensiveCaseFormPr
         throw new Error("User not authenticated");
       }
 
+      // Generate unique case number if not provided or if duplicate
+      let caseNumber = formData.caseNumber;
+      if (!caseNumber) {
+        caseNumber = `CASE-${Date.now()}`;
+      }
+
       // Create the main case
       const dbPayload: any = {
-        case_number: formData.caseNumber,
+        case_number: caseNumber,
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
@@ -113,7 +119,19 @@ export function ComprehensiveCaseForm({ onCaseCreated }: ComprehensiveCaseFormPr
         case_password: formData.password || null,
       };
 
-      const newCaseDb = await SupabaseService.createCase(dbPayload);
+      let newCaseDb;
+      try {
+        newCaseDb = await SupabaseService.createCase(dbPayload);
+      } catch (error: any) {
+        // If duplicate case number, generate a unique one and retry
+        if (error.message?.includes('duplicate key') || error.message?.includes('case_number')) {
+          const uniqueCaseNumber = `CASE-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+          dbPayload.case_number = uniqueCaseNumber;
+          newCaseDb = await SupabaseService.createCase(dbPayload);
+        } else {
+          throw error;
+        }
+      }
 
       // Create victims
       for (const victimData of formData.victims) {
