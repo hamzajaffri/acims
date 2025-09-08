@@ -43,9 +43,14 @@ export default function Cases() {
   });
 
   const loadCases = async () => {
-    const dbCases = await SupabaseService.getAllCases();
-    const mapped = dbCases.map((c: any) => mapDbCaseToUi(c));
-    setCases(mapped);
+    try {
+      const dbCases = await SupabaseService.getAllCases();
+      const mapped = dbCases.map((c: any) => mapDbCaseToUi(c));
+      setCases(mapped);
+    } catch (error) {
+      console.error('Failed to load cases:', error);
+      // Keep existing cases in state if reload fails
+    }
   };
 
   const filterCases = () => {
@@ -70,8 +75,9 @@ export default function Cases() {
     setFilteredCases(filtered);
   };
 
-  const handleCaseCreated = (newCase: Case) => {
-    setCases(prev => [newCase, ...prev]);
+  const handleCaseCreated = async (newCase: Case) => {
+    // Refresh the entire list from database to ensure consistency
+    await loadCases();
   };
   return (
     <main className="flex-1 relative overflow-hidden bg-gradient-to-br from-background via-background to-card/50">
