@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Users, FileText, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { StorageService } from "@/lib/storage";
-import { AuthService } from "@/lib/auth";
+import { SupabaseService } from "@/lib/supabase-service";
+import { useSupabase } from "@/hooks/useSupabase";
 import { Case, Victim, Evidence } from "@/types";
 
 import { BasicCaseInfo } from "./sections/BasicCaseInfo";
@@ -68,6 +68,7 @@ export function ComprehensiveCaseForm({ onCaseCreated }: ComprehensiveCaseFormPr
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const { toast } = useToast();
+  const { user } = useSupabase();
 
   const [formData, setFormData] = useState<CaseFormData>({
     caseNumber: "",
@@ -93,7 +94,7 @@ export function ComprehensiveCaseForm({ onCaseCreated }: ComprehensiveCaseFormPr
     setLoading(true);
 
     try {
-      const currentUser = AuthService.getCurrentUser();
+      const currentUser = user;
       if (!currentUser) {
         throw new Error("User not authenticated");
       }

@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { StorageService } from "@/lib/storage";
-import { AuthService } from "@/lib/auth";
+import { SupabaseService } from "@/lib/supabase-service";
+import { useSupabase } from "@/hooks/useSupabase";
 import { Case } from "@/types";
 import { Plus } from "lucide-react";
 
@@ -19,6 +19,7 @@ export function CaseForm({ onCaseCreated }: CaseFormProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useSupabase();
 
   const [formData, setFormData] = useState({
     caseNumber: "",
@@ -38,17 +39,43 @@ export function CaseForm({ onCaseCreated }: CaseFormProps) {
     setLoading(true);
 
     try {
-      const currentUser = AuthService.getCurrentUser();
+      const currentUser = user;
       if (!currentUser) {
         throw new Error("User not authenticated");
       }
 
-      const newCase = StorageService.createCase({
-        ...formData,
-        assignedTo: formData.assignedTo ? [formData.assignedTo] : [],
-        createdBy: currentUser.id,
-        estimatedCloseDate: formData.estimatedCloseDate ? new Date(formData.estimatedCloseDate) : undefined
-      });
+      const dbPayload: any = {
+        case_number: formData.caseNumber,
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        status: formData.status,
+        assigned_to: [],
+        location: formData.location || null,
+        category: formData.category,
+        estimated_close_date: formData.estimatedCloseDate || null,
+        case_password: formData.password || null,
+      };
+
+      const newCaseDb = await SupabaseService.createCase(dbPayload);
+
+      const newCase: Case = {
+        id: newCaseDb.id,
+        caseNumber: newCaseDb.case_number,
+        title: newCaseDb.title,
+        description: newCaseDb.description ?? "",
+        status: newCaseDb.status,
+        priority: newCaseDb.priority,
+        assignedTo: Array.isArray(newCaseDb.assigned_to) ? newCaseDb.assigned_to : [],
+        createdBy: newCaseDb.created_by,
+        createdAt: newCaseDb.created_at ? new Date(newCaseDb.created_at) : new Date(),
+        updatedAt: newCaseDb.updated_at ? new Date(newCaseDb.updated_at) : new Date(),
+        casePassword: newCaseDb.case_password ?? undefined,
+        location: newCaseDb.location ?? undefined,
+        category: newCaseDb.category ?? "",
+        estimatedCloseDate: newCaseDb.estimated_close_date ? new Date(newCaseDb.estimated_close_date) : undefined,
+        actualCloseDate: newCaseDb.actual_close_date ? new Date(newCaseDb.actual_close_date) : undefined,
+      };
 
       toast({
         title: "Case Created",

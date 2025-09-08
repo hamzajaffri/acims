@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Folder, Search, Filter } from "lucide-react";
-import { StorageService } from "@/lib/storage";
+import { SupabaseService } from "@/lib/supabase-service";
 import { Case } from "@/types";
 import { CaseForm } from "@/components/cases/CaseForm";
 import { ComprehensiveCaseForm } from "@/components/cases/ComprehensiveCaseForm";
@@ -24,9 +24,28 @@ export default function Cases() {
     filterCases();
   }, [cases, searchTerm, statusFilter, priorityFilter]);
 
-  const loadCases = () => {
-    const allCases = StorageService.getAllCases();
-    setCases(allCases);
+  const mapDbCaseToUi = (row: any): Case => ({
+    id: row.id,
+    caseNumber: row.case_number,
+    title: row.title,
+    description: row.description ?? "",
+    status: row.status,
+    priority: row.priority,
+    assignedTo: Array.isArray(row.assigned_to) ? row.assigned_to : [],
+    createdBy: row.created_by,
+    createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+    updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
+    casePassword: row.case_password ?? undefined,
+    location: row.location ?? undefined,
+    category: row.category ?? "",
+    estimatedCloseDate: row.estimated_close_date ? new Date(row.estimated_close_date) : undefined,
+    actualCloseDate: row.actual_close_date ? new Date(row.actual_close_date) : undefined,
+  });
+
+  const loadCases = async () => {
+    const dbCases = await SupabaseService.getAllCases();
+    const mapped = dbCases.map((c: any) => mapDbCaseToUi(c));
+    setCases(mapped);
   };
 
   const filterCases = () => {
