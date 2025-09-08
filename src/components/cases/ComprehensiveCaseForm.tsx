@@ -100,74 +100,78 @@ export function ComprehensiveCaseForm({ onCaseCreated }: ComprehensiveCaseFormPr
       }
 
       // Create the main case
-      const newCase = StorageService.createCase({
-        caseNumber: formData.caseNumber,
+      const dbPayload: any = {
+        case_number: formData.caseNumber,
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
         status: formData.status,
-        assignedTo: formData.assignedTo ? [formData.assignedTo] : [],
-        createdBy: currentUser.id,
-        location: formData.location,
+        assigned_to: [],
+        location: formData.location || null,
         category: formData.category,
-        estimatedCloseDate: formData.estimatedCloseDate ? new Date(formData.estimatedCloseDate) : undefined,
-        casePassword: formData.password
-      });
+        estimated_close_date: formData.estimatedCloseDate || null,
+        case_password: formData.password || null,
+      };
+
+      const newCaseDb = await SupabaseService.createCase(dbPayload);
 
       // Create victims
       for (const victimData of formData.victims) {
-        StorageService.createVictim({
-          caseId: newCase.id,
-          firstName: victimData.firstName,
-          lastName: victimData.lastName,
-          cnicId: victimData.cnicId,
-          age: victimData.age ? parseInt(victimData.age) : undefined,
+        await SupabaseService.createVictim({
+          case_id: newCaseDb.id,
+          first_name: victimData.firstName,
+          last_name: victimData.lastName,
+          cnic_id: victimData.cnicId,
+          age: victimData.age ? parseInt(victimData.age) : null,
           gender: victimData.gender,
-          contactPhone: victimData.contactPhone,
-          contactEmail: victimData.contactEmail,
-          address: victimData.address,
-          notes: victimData.notes
+          contact_phone: victimData.contactPhone || null,
+          contact_email: victimData.contactEmail || null,
+          address: victimData.address || null,
+          notes: victimData.notes || null
         });
       }
 
       // Create evidence
       for (const evidenceData of formData.evidence) {
-        StorageService.createEvidence({
-          caseId: newCase.id,
+        await SupabaseService.createEvidence({
+          case_id: newCaseDb.id,
           name: evidenceData.name,
           type: evidenceData.type,
           category: evidenceData.category,
-          description: evidenceData.description,
-          collectedBy: evidenceData.collectedBy,
-          collectedAt: new Date(),
-          status: "collected",
-          tags: [],
-          chainOfCustody: [{
-            id: `custody-${Date.now()}`,
-            handledBy: evidenceData.collectedBy,
-            handledAt: new Date(),
-            action: "collected",
-            notes: evidenceData.notes,
-            location: evidenceData.location
-          }],
-          location: evidenceData.location,
-          notes: evidenceData.notes
+          description: evidenceData.description || null,
+          location: evidenceData.location || null,
+          notes: evidenceData.notes || null
         });
       }
 
       // Create reports
       for (const reportData of formData.reports) {
-        const reports = JSON.parse(localStorage.getItem('cim_reports') || '[]');
-        const newReport = {
-          id: `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          caseId: newCase.id,
-          ...reportData,
-          createdAt: new Date().toISOString(),
-          createdBy: currentUser.id
-        };
-        reports.push(newReport);
-        localStorage.setItem('cim_reports', JSON.stringify(reports));
+        await SupabaseService.createReport({
+          case_id: newCaseDb.id,
+          title: reportData.title,
+          content: reportData.description,
+          report_type: reportData.type,
+        });
       }
+
+      // Convert DB case to UI format
+      const newCase: Case = {
+        id: newCaseDb.id,
+        caseNumber: newCaseDb.case_number,
+        title: newCaseDb.title,
+        description: newCaseDb.description ?? "",
+        status: newCaseDb.status,
+        priority: newCaseDb.priority,
+        assignedTo: Array.isArray(newCaseDb.assigned_to) ? newCaseDb.assigned_to : [],
+        createdBy: newCaseDb.created_by,
+        createdAt: newCaseDb.created_at ? new Date(newCaseDb.created_at) : new Date(),
+        updatedAt: newCaseDb.updated_at ? new Date(newCaseDb.updated_at) : new Date(),
+        casePassword: newCaseDb.case_password ?? undefined,
+        location: newCaseDb.location ?? undefined,
+        category: newCaseDb.category ?? "",
+        estimatedCloseDate: newCaseDb.estimated_close_date ? new Date(newCaseDb.estimated_close_date) : undefined,
+        actualCloseDate: newCaseDb.actual_close_date ? new Date(newCaseDb.actual_close_date) : undefined,
+      };
 
       toast({
         title: "Case Created Successfully",
