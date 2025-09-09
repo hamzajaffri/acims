@@ -61,7 +61,7 @@ const App = () => {
                 <div className="flex-1 flex flex-col">
                   <main className="flex-1">
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/" element={<Cases />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/cases" element={<Cases />} />
                       <Route path="/victims" element={<Victims />} />

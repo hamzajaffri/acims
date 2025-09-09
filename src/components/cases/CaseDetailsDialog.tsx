@@ -21,7 +21,7 @@ import {
   Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { StorageService } from "@/lib/storage";
+import { SupabaseService } from "@/lib/supabase-service";
 import { Case, Victim, Evidence } from "@/types";
 import { format } from "date-fns";
 
@@ -72,24 +72,84 @@ export function CaseDetailsDialog({
     }
   }, [caseData, open]);
 
-  const loadCaseData = () => {
+  const loadCaseData = async () => {
     if (!caseData) return;
     
-    const caseVictims = StorageService.getVictimsByCaseId(caseData.id);
-    const caseEvidence = StorageService.getEvidenceByCaseId(caseData.id);
-    const allReports = JSON.parse(localStorage.getItem('cim_reports') || '[]');
-    const caseReports = allReports.filter((report: any) => report.caseId === caseData.id);
-    
-    setVictims(caseVictims);
-    setEvidence(caseEvidence);
-    setReports(caseReports);
+    try {
+      const [caseVictims, caseEvidence, caseReports] = await Promise.all([
+        SupabaseService.getAllVictims(),
+        SupabaseService.getAllEvidence(),
+        SupabaseService.getAllReports()
+      ]);
+      
+      // Filter by case ID and map to UI types
+      const mappedVictims = caseVictims
+        .filter(v => v.case_id === caseData.id)
+        .map(v => ({
+          id: v.id,
+          caseId: v.case_id,
+          firstName: v.first_name,
+          lastName: v.last_name,
+          cnicId: v.cnic_id || '',
+          age: v.age || undefined,
+          gender: v.gender,
+          contactPhone: v.contact_phone || undefined,
+          contactEmail: v.contact_email || undefined,
+          address: v.address || undefined,
+          notes: v.notes || undefined,
+          createdAt: new Date(v.created_at),
+          updatedAt: new Date(v.updated_at)
+        }));
+
+      const mappedEvidence = caseEvidence
+        .filter(e => e.case_id === caseData.id)
+        .map(e => ({
+          id: e.id,
+          caseId: e.case_id,
+          name: e.name,
+          type: e.type,
+          category: e.category || '',
+          description: e.description || undefined,
+          fileName: e.file_name || undefined,
+          fileSize: e.file_size || undefined,
+          fileType: e.file_type || undefined,
+          filePath: e.file_path || undefined,
+          hash: e.hash || undefined,
+          evidenceNumber: e.evidence_number || undefined,
+          location: e.location || undefined,
+          storageLocation: e.storage_location || undefined,
+          chainOfCustody: [],
+          collectedBy: e.collected_by,
+          collectedAt: new Date(e.collected_at),
+          status: e.status,
+          tags: e.tags || [],
+          notes: e.notes || undefined
+        }));
+
+      const mappedReports = caseReports.filter(r => r.case_id === caseData.id);
+
+      setVictims(mappedVictims);
+      setEvidence(mappedEvidence);
+      setReports(mappedReports);
+    } catch (error) {
+      console.error('Error loading case data:', error);
+    }
   };
 
   const handleDeleteCase = async () => {
     if (!caseData) return;
 
     try {
-      StorageService.deleteCase(caseData.id);
+      await SupabaseService.deleteCase(caseData.id);
+      
+      // Create audit log
+      await SupabaseService.createAuditLog({
+        action: 'DELETE',
+        entity: 'case',
+        entity_id: caseData.id,
+        details: { caseNumber: caseData.caseNumber, title: caseData.title }
+      });
+      
       toast({
         title: "Case Deleted",
         description: `Case ${caseData.caseNumber} has been deleted successfully.`,
@@ -97,6 +157,7 @@ export function CaseDetailsDialog({
       onOpenChange(false);
       onCaseDeleted?.();
     } catch (error) {
+      console.error('Error deleting case:', error);
       toast({
         title: "Error",
         description: "Failed to delete case",

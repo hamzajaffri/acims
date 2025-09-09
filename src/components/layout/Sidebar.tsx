@@ -29,8 +29,8 @@ import { Button } from '@/components/ui/button';
 import { useSupabase } from '@/hooks/useSupabase';
 
 const adminMenuItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Cases', url: '/cases', icon: Folder },
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Victims', url: '/victims', icon: Users },
   { title: 'Suspects', url: '/suspects', icon: User },
   { title: 'Evidence', url: '/evidence', icon: FileText },

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Case } from "@/types";
-import { StorageService } from "@/lib/storage";
+import { SupabaseService } from "@/lib/supabase-service";
 import { Save, X } from "lucide-react";
 
 interface CaseEditDialogProps {
@@ -46,7 +46,7 @@ export function CaseEditDialog({ case: caseData, open, onOpenChange, onCaseUpdat
     }
   }, [caseData, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!caseData) return;
@@ -73,7 +73,7 @@ export function CaseEditDialog({ case: caseData, open, onOpenChange, onCaseUpdat
     };
 
     try {
-      StorageService.updateCase(caseData.id, updates);
+      await SupabaseService.updateCase(caseData.id, updates);
       
       // Save audit log
       const auditLogs = JSON.parse(localStorage.getItem('auditLogs') || '[]');

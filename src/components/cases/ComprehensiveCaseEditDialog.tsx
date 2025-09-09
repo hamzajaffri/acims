@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Case } from "@/types";
-import { StorageService } from "@/lib/storage";
+import { SupabaseService } from "@/lib/supabase-service";
 import { Save, X, FileText, Users, Package, UserPlus } from "lucide-react";
 import { SuspectForm } from "@/components/suspects/SuspectForm";
 import { SuspectsList } from "@/components/suspects/SuspectsList";
@@ -53,7 +53,7 @@ export function ComprehensiveCaseEditDialog({ case: caseData, open, onOpenChange
     }
   }, [caseData, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!caseData) return;
@@ -80,7 +80,7 @@ export function ComprehensiveCaseEditDialog({ case: caseData, open, onOpenChange
     };
 
     try {
-      StorageService.updateCase(caseData.id, updates);
+      await SupabaseService.updateCase(caseData.id, updates);
       
       toast({
         title: "Success",
