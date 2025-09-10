@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { SystemSettings } from "@/components/settings/SystemSettings";
+import { SiteSettings } from "@/components/settings/SiteSettings";
+import { UserProfileSettings } from "@/components/settings/UserProfileSettings";
 import { SupabaseService } from "@/lib/supabase-service";
 
 export default function Settings() {
@@ -32,7 +34,13 @@ export default function Settings() {
     smtpServer: "",
     smtpPort: "587",
     smtpUsername: "",
-    smtpSsl: true
+    smtpSsl: true,
+    // Site Settings
+    siteName: "",
+    siteDescription: "",
+    siteLogo: "",
+    siteFavicon: "",
+    primaryColor: "#3b82f6"
   });
 
   // Load settings from localStorage on component mount
@@ -83,6 +91,12 @@ export default function Settings() {
     if (field === 'darkMode') {
       setTheme(value ? 'dark' : 'light');
     }
+    
+    // Apply site name to document title immediately
+    if (field === 'siteName') {
+      document.title = value as string || 'nexus-case-guard';
+    }
+    
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
@@ -107,7 +121,13 @@ export default function Settings() {
       smtpServer: "",
       smtpPort: "587",
       smtpUsername: "",
-      smtpSsl: true
+      smtpSsl: true,
+      // Reset site settings
+      siteName: "",
+      siteDescription: "",
+      siteLogo: "",
+      siteFavicon: "",
+      primaryColor: "#3b82f6"
     });
     toast({
       title: "Settings Reset",
@@ -249,7 +269,15 @@ export default function Settings() {
               </CardContent>
             </Card>
 
+            <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <SiteSettings settings={settings} onSettingsChange={handleInputChange} />
+            </div>
+
             <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
+              <UserProfileSettings />
+            </div>
+
+            <div className="animate-fade-in" style={{ animationDelay: '1.0s' }}>
               <SystemSettings settings={settings} onSettingsChange={handleInputChange} />
             </div>
           </div>

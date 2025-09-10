@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useTheme } from './ThemeProvider';
-import { Sun, Moon, Bell, Search, LogOut, User } from 'lucide-react';
+import { Sun, Moon, Bell, Search, LogOut, User, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSupabase } from '@/hooks/useSupabase';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Link } from 'react-router-dom';
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -64,11 +66,23 @@ export function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
+              <Avatar className="w-8 h-8">
+                <AvatarImage src="" alt="Profile" />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
               <span className="hidden sm:inline text-sm">{user?.email}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link to="/settings" className="flex items-center cursor-pointer">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Logout

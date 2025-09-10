@@ -519,6 +519,7 @@ export type Database = {
       }
       users: {
         Row: {
+          avatar_url: string | null
           badge_number: string | null
           created_at: string | null
           department: string | null
@@ -535,6 +536,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          avatar_url?: string | null
           badge_number?: string | null
           created_at?: string | null
           department?: string | null
@@ -551,6 +553,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          avatar_url?: string | null
           badge_number?: string | null
           created_at?: string | null
           department?: string | null
