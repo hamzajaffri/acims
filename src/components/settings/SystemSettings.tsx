@@ -27,7 +27,7 @@ export function SystemSettings({ settings, onSettingsChange }: SystemSettingsPro
         auditLogs: JSON.parse(localStorage.getItem('cim_audit_logs') || '[]'),
         reports: JSON.parse(localStorage.getItem('cim_reports') || '[]'),
         files: JSON.parse(localStorage.getItem('cim_files') || '[]'),
-        settings: JSON.parse(localStorage.getItem('cim-settings') || '{}')
+        settings: settings
       };
 
       const dataStr = JSON.stringify(allData, null, 2);

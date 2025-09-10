@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/layout/ThemeProvider";
 import { SystemSettings } from "@/components/settings/SystemSettings";
+import { SupabaseService } from "@/lib/supabase-service";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -43,17 +44,39 @@ export default function Settings() {
     }
   }, [theme]);
 
+  // Load admin system settings from Supabase (admins only)
+  useEffect(() => {
+    (async () => {
+      try {
+        const dbSettings = await SupabaseService.getSystemSettings();
+        if (dbSettings && Object.keys(dbSettings).length) {
+          setSettings(prev => ({ ...prev, ...dbSettings, darkMode: theme === 'dark' }));
+        }
+      } catch (e) {
+        // Non-admins may not have access due to RLS; ignore
+      }
+    })();
+  }, []);
+  
   // Save settings to localStorage whenever settings change
   useEffect(() => {
     localStorage.setItem('cim-settings', JSON.stringify(settings));
   }, [settings]);
 
-  const handleSave = () => {
-    // Settings are already saved to localStorage via useEffect
-    toast({
-      title: "Settings Saved",
-      description: "Your settings have been saved successfully.",
-    });
+  const handleSave = async () => {
+    try {
+      await SupabaseService.upsertSystemSettings(settings);
+      toast({
+        title: "Settings Saved",
+        description: "Admin settings updated successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Save Failed",
+        description: error?.message || "Only admins can update system settings.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {

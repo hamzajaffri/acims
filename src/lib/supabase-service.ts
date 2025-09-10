@@ -295,6 +295,44 @@ export class SupabaseService {
     return data;
   }
 
+  // System Settings
+  private static toSnake(key: string) {
+    return key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+  }
+
+  private static toCamel(key: string) {
+    return key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  }
+
+  static async getSystemSettings() {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('setting_key, setting_value');
+    if (error) throw error;
+    const result: any = {};
+    (data || []).forEach((row: any) => {
+      result[SupabaseService.toCamel(row.setting_key)] = row.setting_value;
+    });
+    return result;
+  }
+
+  static async upsertSystemSettings(settings: any) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const rows = Object.entries(settings).map(([key, value]) => ({
+      setting_key: SupabaseService.toSnake(key),
+      setting_value: value as any,
+      updated_by: user.id,
+    }));
+
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert(rows, { onConflict: 'setting_key' });
+
+    if (error) throw error;
+  }
+
   // Dashboard Stats
   static async getDashboardStats() {
     const [casesResult, victimsResult, evidenceResult, auditResult] = await Promise.all([
